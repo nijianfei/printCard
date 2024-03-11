@@ -68,8 +68,6 @@ public class ApiController {
                 return fail;
             }
 
-            TaskServer.frame.setVisible(true);
-            TaskServer.frame.setAlwaysOnTop(true);
             String userId = param.getUserId();
             String deptName = param.getDeptName();
             String deptName2 = param.getDeptName2();
@@ -131,6 +129,8 @@ public class ApiController {
                 throw new RuntimeException("保存预览文件异常：" + ex.getMessage());
             }
             try {
+                TaskServer.frame.setVisible(true);
+                TaskServer.frame.setAlwaysOnTop(true);
                 hook(param);
                 if (isPrint) {
                     //打印卡片
@@ -145,15 +145,19 @@ public class ApiController {
             } catch (IllegalArgumentException iex) {
                 res = ResponseModel.fail(param.getReqNo(), iex.getMessage());
             } catch (Exception ex) {
-                log.error("ApiController_print:{}", ex.getMessage(), ex);
+                log.error("ApiController_Exception_print:{}", ex.getMessage(), ex);
+                tuika();
+                res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
+            }catch (Error ex) {
+                log.error("ApiController_Error_print:{}", ex.getMessage(), ex);
                 tuika();
                 res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
             } finally {
                 TaskServer.frame.setVisible(false);
                 KeyHook.instance.unHook();
             }
-        } catch (Exception ex) {
-            log.error("ApiController_Exception:{}", ex.getMessage(), ex);
+        } catch (Error ex) {
+            log.error("ApiController_Error:{}", ex.getMessage(), ex);
             res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
         }
         return res;
