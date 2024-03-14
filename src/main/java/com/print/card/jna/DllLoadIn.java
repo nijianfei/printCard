@@ -5,7 +5,7 @@ import com.sun.jna.Native;
 import com.sun.jna.WString;
 
 public interface DllLoadIn extends Library {
-    DllLoadIn instance = Native.load("C:\\print\\bin\\MaticaSDKLiteRight.dll", DllLoadIn.class);
+    DllLoadIn instance = Native.loadLibrary("MaticaSDKLiteRight", DllLoadIn.class);
 
     WString callFunc(WString xmlCommand);
 
