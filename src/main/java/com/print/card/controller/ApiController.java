@@ -9,6 +9,7 @@ import com.print.card.config.TaskServer;
 import com.print.card.dto.Block;
 import com.print.card.dto.Template;
 import com.print.card.dto.TemplateConfig;
+import com.print.card.enums.TemplateEnum;
 import com.print.card.enums.YNEnum;
 import com.print.card.jna.DllLoadIn;
 import com.print.card.jna.KeyHook;
@@ -41,8 +42,7 @@ import java.util.Objects;
 @RequestMapping({"api"})
 public class ApiController {
     private static final Logger log = LoggerFactory.getLogger(ApiController.class);
-    @Value("${print.record.path}")
-    private String printRecordPath;
+    private String printRecordPath = System.getProperty("user.dir")+ "\\print_recode\\%s\\%s\\%s.png";
     @Value("#{T(java.lang.Integer).parseInt('${wait.result.tryCount}')}")
     private Integer tryCount;
     @Autowired
@@ -142,21 +142,17 @@ public class ApiController {
                 }
                 ResponseModel result = waitPrintResult(param);
                 return result;
-            } catch (IllegalArgumentException iex) {
-                res = ResponseModel.fail(param.getReqNo(), iex.getMessage());
             } catch (Exception ex) {
                 log.error("ApiController_Exception_print:{}", ex.getMessage(), ex);
-                tuika();
-                res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
-            }catch (Error ex) {
-                log.error("ApiController_Error_print:{}", ex.getMessage(), ex);
-                tuika();
-                res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
+                throw new RuntimeException("打印异常：" + ex.getMessage());
             } finally {
                 TaskServer.frame.setVisible(false);
                 KeyHook.instance.unHook();
             }
-        } catch (Error ex) {
+        } catch (Exception ex) {
+            log.error("ApiController_Exception_print:{}", ex.getMessage(), ex);
+            res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
+        }catch (Error ex) {
             log.error("ApiController_Error:{}", ex.getMessage(), ex);
             res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
         }
@@ -170,8 +166,7 @@ public class ApiController {
     }
 
     void checkParams(PrintDto param) {
-        Assert.isTrue(YNEnum.isExist(param.getTemplateType()), "templateType非法");
-        Assert.isTrue(StringUtils.isNotBlank(param.getReqNo()), "reqNo不能为空");
+        Assert.isTrue(TemplateEnum.isExist(param.getTemplateType()), "不支持的模板ID");
         Assert.isTrue(StringUtils.isNotBlank(param.getUserId()), "userId不能为空");
         Assert.isTrue(StringUtils.isNotBlank(param.getUserName()), "userName不能为空");
         Assert.isTrue(StringUtils.isNotBlank(param.getDeptName()), "deptName不能为空");
@@ -224,22 +219,19 @@ public class ApiController {
         BufferedImage bufferedImage = ImageIO.read(inputStream);
         int widthDiff = bufferedImage.getWidth() - photoBlock.getWidth();
         int heightDiff = bufferedImage.getHeight() - photoBlock.getHeight();
-        if (Objects.equals(type, "0")) {
+        if (Objects.equals(type, TemplateEnum.T4.getCode())) {
             //高度基准
             if (widthDiff - heightDiff > 0) {
                 bufferedImage = Thumbnails.of(bufferedImage).width(photoBlock.getWidth()).asBufferedImage();//按宽度缩放
-            }
-            //宽度基准
-            if (widthDiff - heightDiff < 0) {
+            }else {
                 bufferedImage = Thumbnails.of(bufferedImage).height(photoBlock.getHeight()).asBufferedImage();//按高度缩放
             }
         } else {
             //高度基准
             if (widthDiff - heightDiff > 0) {
                 bufferedImage = Thumbnails.of(bufferedImage).height(photoBlock.getHeight()).asBufferedImage();//按高度缩放
-            }
-            //宽度基准
-            if (widthDiff - heightDiff < 0) {
+            }else{
+                //宽度基准
                 bufferedImage = Thumbnails.of(bufferedImage).width(photoBlock.getWidth()).asBufferedImage();//按宽度缩放
             }
         }
