@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.print.card.PrintStatusEnum;
 import com.print.card.dto.PrintResultDto;
 import com.print.card.jna.DllLoadIn;
+import com.print.card.model.PrintDto;
 import com.print.card.utils.CommandUtil;
 import com.sun.jna.WString;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,7 @@ public class TaskServer {
     private static JLabel labelStatus = getLabel("",16);
     private static JLabel labelResult = getLabel("",16);
 
-
+    public static PrintDto param;
 
     @Value("#{T(java.lang.Boolean).parseBoolean('${isPrint:true}')}")
     private Boolean isPrint;
@@ -40,6 +41,11 @@ public class TaskServer {
 
             SwingUtilities.invokeLater(() -> {
                 labelStatus.setText("打印机状态："+pse.getName());
+                if (param != null) {
+                    labelResult.setText("人员姓名："+param.getUserName() + " " + "卡号："+"");
+                }else{
+                    labelResult.setText("");
+                }
             });
 
             if (!isPrint && !isCheckStatus ) {
@@ -93,15 +99,15 @@ public class TaskServer {
         frame.setExtendedState(JFrame.NORMAL);
         frame.setUndecorated(true);
         frame.setAlwaysOnTop(true);
-        frame.setLayout(new GridLayout(2, 1));
-        JPanel panelTitle = getJPanel(50,labelTitle);
+        frame.setLayout(new GridLayout(3, 1));
+        JPanel panelTitle = getJPanel(0,labelTitle);
         JPanel panelStatus = getJPanel(0,labelStatus);
-//        JPanel panelResult = getJPanel(labelResult);
+        JPanel panelResult = getJPanel(0,labelResult);
 
 
         frame.getContentPane().add(panelTitle);
         frame.getContentPane().add(panelStatus);
-//        frame.getContentPane().add(panelResult);
+        frame.getContentPane().add(panelResult);
 
         // 窗体居中
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -110,10 +116,6 @@ public class TaskServer {
                 (int)(screenRectangle.getCenterY() - frame.getHeight() / 2));
         //关闭按钮不生效
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-
-//        frame.setVisible(true);
-//        frame.requestFocus();
-//        frame.toFront();
 
         return frame;
     }

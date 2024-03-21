@@ -42,7 +42,7 @@ import java.util.Objects;
 @RequestMapping({"api"})
 public class ApiController {
     private static final Logger log = LoggerFactory.getLogger(ApiController.class);
-    private String printRecordPath = System.getProperty("user.dir")+ "\\print_recode\\%s\\%s\\%s.png";
+    private String printRecordPath = System.getProperty("user.dir") + "\\print_recode\\%s\\%s\\%s.png";
     @Value("#{T(java.lang.Integer).parseInt('${wait.result.tryCount}')}")
     private Integer tryCount;
     @Autowired
@@ -51,6 +51,9 @@ public class ApiController {
     private Boolean isPrint;
     @Value("#{T(java.lang.Boolean).parseBoolean('${isCheckStatus:true}')}")
     private Boolean isCheckStatus;
+
+    @Value("#{T(java.lang.Boolean).parseBoolean('${isCheckParams:true}')}")
+    private Boolean isCheckParams;
 
     @PostMapping({"print"})
     public ResponseModel print(@RequestBody PrintDto param) {
@@ -62,7 +65,7 @@ public class ApiController {
             Template template = templateConfig.getTemplateMap().get(type);
             String base64Photo = param.getBase64Photo();
             String userName = param.getUserName();
-            if (!TaskServer.isReady() && isPrint) {
+            if (!TaskServer.isReady() && (isPrint || isCheckStatus)) {
                 ResponseModel fail = ResponseModel.fail(param.getReqNo(), "打印机状态：" + getErrInfo());
                 log.error("ApiController:{}", JSON.toJSONString(fail));
                 return fail;
@@ -137,7 +140,14 @@ public class ApiController {
                     execPrint(processStream(combiner.getCombinedImage()), processStream(backIn));
                 } else {
                     if (isCheckStatus) {
-                        tuika();
+                        try {
+                            getRdidDataMapList();
+                            sleep(2000);
+                        } finally {
+                            tuika();
+                        }
+                    } else {
+                        KeyHook.instance.setOutTime(5000);
                     }
                 }
                 ResponseModel result = waitPrintResult(param);
@@ -148,11 +158,12 @@ public class ApiController {
             } finally {
                 TaskServer.frame.setVisible(false);
                 KeyHook.instance.unHook();
+                TaskServer.param = null;
             }
         } catch (Exception ex) {
             log.error("ApiController_Exception_print:{}", ex.getMessage(), ex);
             res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
-        }catch (Error ex) {
+        } catch (Error ex) {
             log.error("ApiController_Error:{}", ex.getMessage(), ex);
             res = ResponseModel.fail(param.getReqNo(), ex.getMessage());
         }
@@ -166,12 +177,15 @@ public class ApiController {
     }
 
     void checkParams(PrintDto param) {
-        Assert.isTrue(TemplateEnum.isExist(param.getTemplateType()), "不支持的模板ID");
-        Assert.isTrue(StringUtils.isNotBlank(param.getUserId()), "userId不能为空");
-        Assert.isTrue(StringUtils.isNotBlank(param.getUserName()), "userName不能为空");
-        Assert.isTrue(StringUtils.isNotBlank(param.getDeptName()), "deptName不能为空");
-        Assert.isTrue(StringUtils.isNotBlank(param.getBase64Photo()), "base64Photo不能为空");
+        if (isCheckParams) {
+            Assert.isTrue(TemplateEnum.isExist(param.getTemplateType()), "不支持的模板ID");
+            Assert.isTrue(StringUtils.isNotBlank(param.getUserId()), "userId不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(param.getUserName()), "userName不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(param.getDeptName()), "deptName不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(param.getBase64Photo()), "base64Photo不能为空");
+        }
         buildDeptName(param);
+        TaskServer.param = param;
     }
 
     private void buildDeptName(PrintDto param) {
@@ -223,14 +237,14 @@ public class ApiController {
             //高度基准
             if (widthDiff - heightDiff > 0) {
                 bufferedImage = Thumbnails.of(bufferedImage).width(photoBlock.getWidth()).asBufferedImage();//按宽度缩放
-            }else {
+            } else {
                 bufferedImage = Thumbnails.of(bufferedImage).height(photoBlock.getHeight()).asBufferedImage();//按高度缩放
             }
         } else {
             //高度基准
             if (widthDiff - heightDiff > 0) {
                 bufferedImage = Thumbnails.of(bufferedImage).height(photoBlock.getHeight()).asBufferedImage();//按高度缩放
-            }else{
+            } else {
                 //宽度基准
                 bufferedImage = Thumbnails.of(bufferedImage).width(photoBlock.getWidth()).asBufferedImage();//按宽度缩放
             }
@@ -262,20 +276,20 @@ public class ApiController {
         sleep(2000);
         int tCount = tryCount;
         while (tCount-- > 0) {
-            if (TaskServer.isReady() || !isPrint) {
-                if (!isPrint) {
-                    sleep(5000);
-                    log.error("已开启测试模式！不会打印卡片，只做图片预览！延时5秒返回结果---------------------------------------------------》");
-                } else {
-                    log.info("打印机处于就绪状态：{}  --》返回结果", JSON.toJSONString(TaskServer.getStatusResult()));
-                }
+            if (TaskServer.isReady()) {
+                log.info("打印机处于就绪状态：{}  --》返回结果", JSON.toJSONString(TaskServer.getStatusResult()));
                 return ResponseModel.success(param.getReqNo(), KeyHook.instance.getCard());
             } else {
-                if (TaskServer.isBusy()) {
-                    sleep(2000);
-                } else {
-                    log.error("打印机处于异常状态：{} ", JSON.toJSONString(TaskServer.getStatusResult()));
-                    break;
+                if (isPrint || isCheckStatus) {
+                    if (TaskServer.isBusy()) {
+                        sleep(2000);
+                    } else {
+                        log.error("打印机处于异常状态：{} ", JSON.toJSONString(TaskServer.getStatusResult()));
+                        break;
+                    }
+                }else{
+                    log.error("已开启测试模式！不会打印卡片，只做图片预览！延时5秒返回结果---------------------------------------------------》");
+                    sleep(5000);
                 }
             }
         }
@@ -291,10 +305,16 @@ public class ApiController {
         }
     }
 
+    private String getRdidDataMapList() {
+        Map<String, String> deviceStatuses = CommandUtil.parse_query_local_device_statuses(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_query_local_device_statuses())).toString());
+        CommandUtil.parse_setting_source(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_position_card(deviceStatuses.get("port"), deviceStatuses.get("port_number"), deviceStatuses.get("hardware_type"), "PrintPosition"))).toString());
+        return null;
+    }
+
     private void tuika() {
         try {
             Map<String, String> deviceStatuses = CommandUtil.parse_query_local_device_statuses(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_query_local_device_statuses())).toString());
-            CommandUtil.parse_setting_source(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_position_card((String) deviceStatuses.get("port"), (String) deviceStatuses.get("port_number"), (String) deviceStatuses.get("hardware_type"), "RejectPosition"))).toString());
+            CommandUtil.parse_setting_source(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_position_card( deviceStatuses.get("port"),  deviceStatuses.get("port_number"), deviceStatuses.get("hardware_type"), "RejectPosition"))).toString());
         } catch (Exception e) {
             log.error("ApiController_tuika:{}", e.getMessage(), e);
         }
