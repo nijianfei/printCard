@@ -10,7 +10,6 @@ import com.print.card.dto.Block;
 import com.print.card.dto.Template;
 import com.print.card.dto.TemplateConfig;
 import com.print.card.enums.TemplateEnum;
-import com.print.card.enums.YNEnum;
 import com.print.card.jna.DllLoadIn;
 import com.print.card.jna.KeyHook;
 import com.print.card.model.PrintDto;
@@ -132,8 +131,8 @@ public class ApiController {
                 throw new RuntimeException("保存预览文件异常：" + ex.getMessage());
             }
             try {
-                TaskServer.frame.setVisible(true);
-                TaskServer.frame.setAlwaysOnTop(true);
+//                TaskServer.frame.setVisible(true);
+//                TaskServer.frame.setAlwaysOnTop(true);
                 hook(param);
                 if (isPrint) {
                     //打印卡片
@@ -156,7 +155,7 @@ public class ApiController {
                 log.error("ApiController_Exception_print:{}", ex.getMessage(), ex);
                 throw new RuntimeException("打印异常：" + ex.getMessage());
             } finally {
-                TaskServer.frame.setVisible(false);
+//                TaskServer.frame.setVisible(false);
                 KeyHook.instance.unHook();
                 TaskServer.param = null;
             }
@@ -191,6 +190,10 @@ public class ApiController {
     private void buildDeptName(PrintDto param) {
         int singleMaxLength = 13;
         double proportion = 0.40;
+        String[] split = param.getDeptName().split("/");
+        if (split.length >=2) {
+            param.setDeptName(split[split.length-1]);
+        }
         String deptName = param.getDeptName();
         if (deptName.length() <= singleMaxLength) {
             return;
@@ -290,6 +293,7 @@ public class ApiController {
                 }else{
                     log.error("已开启测试模式！不会打印卡片，只做图片预览！延时5秒返回结果---------------------------------------------------》");
                     sleep(5000);
+                    return ResponseModel.success(param.getReqNo(), KeyHook.instance.getCard());
                 }
             }
         }

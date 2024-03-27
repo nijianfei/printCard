@@ -1,7 +1,6 @@
 package com.print.card.utils;
 
-import com.sun.jna.WString;
-import org.apache.commons.collections.CollectionUtils;
+
 
 import java.util.Map;
 

@@ -1,29 +1,16 @@
 package com.print.card;
 
-import cn.hutool.core.io.FileUtil;
-import com.alibaba.fastjson.util.IOUtils;
-import com.print.card.config.ThreadPoolConfig;
 import com.print.card.controller.ApiController;
 import com.print.card.jna.DllLoadIn;
 import com.print.card.jna.KeyHook;
-import com.print.card.model.PrintDto;
-import com.print.card.utils.ApplicationContextHelper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 @EnableScheduling

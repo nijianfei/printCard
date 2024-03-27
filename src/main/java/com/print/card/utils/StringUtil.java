@@ -1,6 +1,7 @@
 package com.print.card.utils;
 
-import org.apache.commons.collections.CollectionUtils;
+
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
