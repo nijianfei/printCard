@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>工卡本地打印</title>
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Cache-control" content="no-cache" />
+    <meta http-equiv="Cache" content="no-cache" />
+    <link rel="stylesheet" type="text/css" href="./css/style.css" />
+</head>
+
+<body>
+<div class="container">
+    <div class="form-content">
+        <form id="myForm">
+            <ul>
+                <li class="flex"><label>员工工号：</label><input class="input" type="text" id="userId" name="userId" required placeholder="请输入员工工号"></li>
+                <li class="flex"><label>员工姓名：</label><input class="input" type="text" id="userName" name="userName" required placeholder="请输入员工姓名"></li>
+                <li class="flex"><label>部门名称：</label><input class="input" type="text" id="deptName" name="deptName" required placeholder="请输入部门名称"></li>
+                <li class="flex"><label>上传照片：</label>
+                      <div class="iposition">
+                        <input class="abpositon" type="file" id="imageUpload" name="image" accept="image/*">
+                        <button class="btn ">上传照片</button>
+                    </div>
+                </li>
+				
+                 <li class="flex"><label>照片预览：</label>
+					 <div style="height: 100px;">
+						<img id="previewImage" src="#" alt="照片预览" style="max-width: 150px; max-height: 100px; display: none;"/>
+					 </div>
+                 </li>
+            </ul>
+            <div class="flex submit-btn">
+                <button type="submit" class="btn submit">打印</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+    <script type="text/javascript" src="./js/jquery-3.1.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // 图片上传预览功能
+            $('#imageUpload').on('change', function () {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#previewImage').attr('src', e.target.result).show();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+			// 表单提交事件处理
+            $('#myForm').on('submit', function (e) {
+                e.preventDefault(); // 阻止表单默认提交行为
+
+            const formData = {
+                base64Photo: $('#previewImage').attr('src'),
+                userName: document.getElementById('userName').value,
+                deptName: document.getElementById('deptName').value,
+                userId: document.getElementById('userId').value,
+				templateType: '4',
+				reqNo: 'local_print'
+            };
+
+                $.ajax({
+                    url: 'http://localhost:9901/api/print', // 替换为实际的服务器接收地址
+                    type: 'POST',
+                    data: JSON.stringify(formData),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        console.log('提交成功：', response);
+                        // 这里可以根据服务器返回结果进行相应的页面提示等操作
+                    },
+                    error: function (xhr, status, error) {
+                        console.log('提交失败：', error);
+                        // 同样可以进行错误提示等处理
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
