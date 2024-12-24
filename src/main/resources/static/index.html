@@ -2,86 +2,160 @@
 <html lang="en">
 
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>工卡本地打印</title>
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Cache-control" content="no-cache" />
-    <meta http-equiv="Cache" content="no-cache" />
-    <link rel="stylesheet" type="text/css" href="./css/style.css" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>工卡本地打印</title>
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Cache-control" content="no-cache" />
+  <meta http-equiv="Cache" content="no-cache" />
+  <link rel="stylesheet" type="text/css" href="./css/style.css" />
+  <link rel="stylesheet" type="text/css" href="./js/layer/skin/default/layer.css" />
 </head>
 
 <body>
-<div class="container">
+  <div class="container">
     <div class="form-content">
-        <form id="myForm">
-            <ul>
-                <li class="flex"><label>员工工号：</label><input class="input" type="text" id="userId" name="userId" required placeholder="请输入员工工号"></li>
-                <li class="flex"><label>员工姓名：</label><input class="input" type="text" id="userName" name="userName" required placeholder="请输入员工姓名"></li>
-                <li class="flex"><label>部门名称：</label><input class="input" type="text" id="deptName" name="deptName" required placeholder="请输入部门名称"></li>
-                <li class="flex"><label>上传照片：</label>
-                      <div class="iposition">
-                        <input class="abpositon" type="file" id="imageUpload" name="image" accept="image/*">
-                        <button class="btn ">上传照片</button>
-                    </div>
-                </li>
-				
-                 <li class="flex"><label>照片预览：</label>
-					 <div style="height: 100px;">
-						<img id="previewImage" src="#" alt="照片预览" style="max-width: 150px; max-height: 100px; display: none;"/>
-					 </div>
-                 </li>
-            </ul>
-            <div class="flex submit-btn">
-                <button type="submit" class="btn submit">打印</button>
+      <form id="myForm" method="post" onsubmit="return false;">
+        <ul>
+          <li class="flex">
+            <label>员工工号：</label><input autocomplete="off" class="input" type="text" id="userId" name="userId"
+              placeholder="请输入员工工号" />
+          </li>
+          <li class="flex">
+            <label>员工姓名：</label><input autocomplete="off" class="input" type="text" id="userName" name="userName"
+              placeholder="请输入员工姓名" />
+          </li>
+          <li class="flex">
+            <label>部门名称：</label><input autocomplete="off" class="input" type="text" id="deptName" name="deptName"
+              placeholder="请输入部门名称" />
+          </li>
+          <li class="flex">
+            <label>上传照片：</label>
+            <div class="iposition">
+              <input class="abpositon" type="file" id="imageUpload" name="image" accept="image/*" />
+              <button class="btn">上传照片</button>
             </div>
+          </li>
 
-        </form>
+          <li class="flex">
+            <label>照片预览：</label>
+            <div style="height: 100px">
+              <img id="previewImage" src="#" alt="照片预览" style="max-width: 150px; max-height: 100px; display: none" />
+            </div>
+          </li>
+        </ul>
+        <div class="flex submit-btn">
+          <button type="reset" class="btn reset" onclick="handleReset(event)">
+            清空
+          </button>
+          <button type="button" class="btn submit">打印</button>
+        </div>
+      </form>
     </div>
-</div>
-    <script type="text/javascript" src="./js/jquery-3.1.1.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            // 图片上传预览功能
-            $('#imageUpload').on('change', function () {
-                const file = this.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        $('#previewImage').attr('src', e.target.result).show();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-			// 表单提交事件处理
-            $('#myForm').on('submit', function (e) {
-                e.preventDefault(); // 阻止表单默认提交行为
-
-            const formData = {
-                base64Photo: $('#previewImage').attr('src'),
-                userName: document.getElementById('userName').value,
-                deptName: document.getElementById('deptName').value,
-                userId: document.getElementById('userId').value,
-				templateType: '4',
-				reqNo: 'local_print'
-            };
-
-                $.ajax({
-                    url: 'http://localhost:9901/api/print',
-                    type: 'POST',
-                    data: JSON.stringify(formData),
-                    contentType: 'application/json',
-                    success: function (response) {
-                        console.log('提交成功：', response);
-                        // 这里可以根据服务器返回结果进行相应的页面提示等操作
-                    },
-                    error: function (xhr, status, error) {
-                        console.log('提交失败：', error);
-                        // 同样可以进行错误提示等处理
-                    }
-                });
-            });
+  </div>
+  <script type="text/javascript" src="./js/jquery-3.1.1.min.js"></script>
+  <script type="text/javascript" src="./js/layer/layer.js"></script>
+  <script>
+    var flag = false;
+    document.addEventListener("keydown", function (event) {
+      if (
+        event.key === "" ||
+        event.key === "Enter" ||
+        event.keyCode === 13 ||
+        event.keyCode === 32
+      ) {
+        event.preventDefault();
+      }
+    });
+    $(document).ready(function () {
+      // 图片上传预览功能
+      $("#imageUpload").on("change", function () {
+        const file = this.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            $("#previewImage").attr("src", e.target.result).show();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      // 表单提交事件处理
+      $(".submit").on("click", function (e) {
+        var $this = $(this);
+        e.stopPropagation();
+        e.preventDefault();
+        if (flag == true) return;
+        $this.attr("disabled", true);
+        //Loading层
+        var layerLoading = layer.load(1, {
+          shade: [0.3, "#000"], //0.1透明度的白色背景
         });
-    </script>
+        const formData = {
+          base64Photo: $("#previewImage").attr("src"),
+          userName: document.getElementById("userName").value,
+          deptName: document.getElementById("deptName").value,
+          userId: document.getElementById("userId").value,
+          templateType: "4",
+          reqNo: "local_print",
+        };
+        flag = true;
+        $.ajax({
+          url: "http://localhost:9901/api/print",
+          type: "POST",
+          async: true,
+          data: JSON.stringify(formData),
+          contentType: "application/json",
+          success: function (response) {
+            layer.close(layerLoading);
+            flag = false;
+            $this.attr("disabled", false);
+            showMessage(response);
+            // 这里可以根据服务器返回结果进行相应的页面提示等操作
+          },
+          error: function (xhr, status, error) {
+            layer.close(layerLoading);
+            layer.alert("打印失败");
+            flag = false;
+            $this.attr("disabled", false);
+          },
+        });
+      });
+    });
+    function showMessage(response) {
+      if (response.invokeCls === "70") {
+        layer.alert("打印完成", {
+          time: 5 * 1000,
+          success: function (layero, index) {
+            var timeNum = this.time / 1000,
+              setText = function (start) {
+                layer.title(
+                  (start ? timeNum : --timeNum) + " 秒后关闭",
+                  index
+                );
+              };
+            setText(!0);
+            this.timer = setInterval(setText, 1000);
+            if (timeNum <= 0) clearInterval(this.timer);
+          },
+          end: function () {
+            clearInterval(this.timer);
+          },
+        });
+      } else if (response.invokeCls === "90") {
+        layer.alert('打印异常')
+      } else {
+        // 如果invokeCls不是70或90，可以选择不显示消息或显示其他默认消息
+        return;
+      }
+    }
+    function handleReset(event) {
+      // 阻止表单的默认重置行为（因为我们想要自定义重置逻辑）
+      //event.preventDefault();
+      // 清空图片预览框
+      const imagePreview = document.getElementById("previewImage");
+      imagePreview.src = "";
+      imagePreview.style.display = "none";
+    }
+  </script>
 </body>
+
 </html>
