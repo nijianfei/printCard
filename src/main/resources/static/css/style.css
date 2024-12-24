@@ -6,7 +6,6 @@
 
 ::-webkit-scrollbar-thumb {
     border-radius: 10px;
-    /*background: #a5d9fc;*/
     background: #d1d7ff;
 }
 
@@ -90,6 +89,9 @@ button {
 ul,li{
     list-style: none;
 }
+ul{
+    padding: 20px;
+}
 .iposition{
     position: relative;
 }
@@ -124,10 +126,7 @@ ul,li{
 .submit{
     width:120px;
 }
-/* .form-content{ */
-    /* margin:0 auto; */
-    /* max-width:400px; */
-/* } */
+
 .form-content li{
     box-sizing: border-box;
     padding:5px 0;
@@ -151,7 +150,7 @@ body {
 
 .container {
 	background-color: #fff;
-	padding: 30px;
+	padding: 20px;
 	border-radius: 8px;
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 	width: 400px;
