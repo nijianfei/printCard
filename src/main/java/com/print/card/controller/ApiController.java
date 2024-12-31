@@ -14,6 +14,7 @@ import com.print.card.jna.DllLoadIn;
 import com.print.card.jna.KeyHook;
 import com.print.card.model.PrintDto;
 import com.print.card.model.ResponseModel;
+import com.print.card.utils.AdminUtil;
 import com.print.card.utils.CommandUtil;
 import com.sun.jna.WString;
 import net.coobird.thumbnailator.Thumbnails;
@@ -57,6 +58,7 @@ public class ApiController {
     @PostMapping({"print"})
     public ResponseModel print(@RequestBody PrintDto param) {
         log.info("读卡打印_入参:{}", JSON.toJSONString(param));
+        log.info("isAdmin:{}", AdminUtil.isAdmin());
         ResponseModel res = null;
         try {
             checkParams(param);
@@ -150,6 +152,7 @@ public class ApiController {
                     }
                 }
                 ResponseModel result = waitPrintResult(param);
+                log.info("API返回结果：{}", JSON.toJSONString(result));
                 return result;
             } catch (Exception ex) {
                 log.error("ApiController_Exception_print:{}", ex.getMessage(), ex);
@@ -171,8 +174,9 @@ public class ApiController {
 
     private void hook(PrintDto param) {
         new Thread(() -> {
-            log.info("userId:{},userName:{}. hook End {}", param.getUserId(), param.getUserName(), KeyHook.instance.installHook());
+            log.info("userId:{},userName:{}. hook End ,stat: {}", param.getUserId(), param.getUserName(), KeyHook.instance.installHook());
         }).start();
+        sleep(1000);
     }
 
     void checkParams(PrintDto param) {

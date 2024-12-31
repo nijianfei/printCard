@@ -3,6 +3,7 @@ package com.print.card;
 import com.print.card.controller.ApiController;
 import com.print.card.jna.DllLoadIn;
 import com.print.card.jna.KeyHook;
+import com.print.card.utils.AdminUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -33,6 +34,7 @@ public class CardApplication {
 //		for (String envName : env.keySet()) {
 //			System.out.format("%s=%s%n", envName, env.get(envName));
 //		}
+		AdminUtil.printPermissionGroup();
 		try {
 			KeyHook keyHook = KeyHook.instance;
 		} catch (Exception e) {
