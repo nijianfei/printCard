@@ -141,9 +141,10 @@
           },
         });
       } else if (response.invokeCls === "90") {
-        layer.alert('打印异常')
+        layer.alert(response.ngMessage)
       } else {
         // 如果invokeCls不是70或90，可以选择不显示消息或显示其他默认消息
+        layer.alert('打印异常')
         return;
       }
     }
