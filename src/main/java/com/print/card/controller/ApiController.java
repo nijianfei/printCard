@@ -7,6 +7,7 @@ import com.freewayso.image.combiner.enums.ZoomMode;
 import com.print.card.CardApplication;
 import com.print.card.config.TaskServer;
 import com.print.card.dto.Block;
+import com.print.card.dto.PrintResultDto;
 import com.print.card.dto.Template;
 import com.print.card.dto.TemplateConfig;
 import com.print.card.enums.TemplateEnum;
@@ -45,6 +46,9 @@ public class ApiController {
     private String printRecordPath = System.getProperty("user.dir") + "\\print_recode\\%s\\%s\\%s.png";
     @Value("#{T(java.lang.Integer).parseInt('${wait.result.tryCount}')}")
     private Integer tryCount;
+
+    @Value("#{T(java.lang.Integer).parseInt('${read.card.unitTime:2000}')}")
+    private Integer readCardUnitTime;
     @Autowired
     private TemplateConfig templateConfig;
     @Value("#{T(java.lang.Boolean).parseBoolean('${isPrint:true}')}")
@@ -156,7 +160,7 @@ public class ApiController {
                 return result;
             } catch (Exception ex) {
                 log.error("ApiController_Exception_print:{}", ex.getMessage(), ex);
-                throw new RuntimeException("打印异常：" + ex.getMessage());
+                throw new RuntimeException("打印失败：" + ex.getMessage());
             } finally {
 //                TaskServer.frame.setVisible(false);
                 KeyHook.instance.unHook();
@@ -180,13 +184,13 @@ public class ApiController {
     }
 
     void checkParams(PrintDto param) {
-        if (isCheckParams) {
+        if (isCheckParams && !"local_print".equals(param.getReqNo())) {
             Assert.isTrue(TemplateEnum.isExist(param.getTemplateType()), "不支持的模板ID");
             Assert.isTrue(StringUtils.isNotBlank(param.getUserId()), "userId不能为空");
             Assert.isTrue(StringUtils.isNotBlank(param.getUserName()), "userName不能为空");
             Assert.isTrue(StringUtils.isNotBlank(param.getDeptName()), "deptName不能为空");
             Assert.isTrue(StringUtils.isNotBlank(param.getBase64Photo()), "base64Photo不能为空");
-        }else{
+        } else {
             if (StringUtils.isBlank(param.getTemplateType())) {
                 param.setTemplateType("4");
             }
@@ -212,8 +216,8 @@ public class ApiController {
         int singleMaxLength = 13;
         double proportion = 0.40;
         String[] split = param.getDeptName().split("/");
-        if (split.length >=2) {
-            param.setDeptName(split[split.length-1]);
+        if (split.length >= 2) {
+            param.setDeptName(split[split.length - 1]);
         }
         String deptName = param.getDeptName();
         if (deptName.length() <= singleMaxLength) {
@@ -238,9 +242,12 @@ public class ApiController {
     }
 
     private String getErrInfo() {
-        String errorMsg = TaskServer.getStatusResult().getErrorMsg();
-        String printSubStatusStatus = TaskServer.getStatusResult().getPrintSubStatusStatus();
+        PrintResultDto statusResult = TaskServer.getStatusResult();
+        String errorMsg = statusResult != null ? statusResult.getErrorMsg() : null;
+        String printSubStatusStatus = statusResult != null ? statusResult.getPrintSubStatusStatus() : null;
+        String msg = "";
         return TaskServer.getStatus().getName() + (Objects.nonNull(errorMsg) ? " - " + errorMsg : "") + (Objects.nonNull(printSubStatusStatus) ? " - " + printSubStatusStatus : "");
+
     }
 
     private Color getColor(Block colorBlock) {
@@ -287,6 +294,7 @@ public class ApiController {
         graphics.fillRect(0, 0, photoBlock.getWidth(), photoBlock.getHeight());
         graphics.dispose();
 
+
         ImageCombiner combiner = new ImageCombiner(back, OutputFormat.PNG);
         int x = (photoBlock.getWidth() - bufferedImage.getWidth()) / 2;
         int y = (photoBlock.getHeight() - bufferedImage.getHeight()) / 2;
@@ -311,7 +319,7 @@ public class ApiController {
                         log.error("打印机处于异常状态：{} ", JSON.toJSONString(TaskServer.getStatusResult()));
                         break;
                     }
-                }else{
+                } else {
                     log.error("已开启测试模式！不会打印卡片，只做图片预览！延时5秒返回结果---------------------------------------------------》");
                     sleep(5000);
                     return ResponseModel.success(param.getReqNo(), KeyHook.instance.getCard());
@@ -339,7 +347,7 @@ public class ApiController {
     private void tuika() {
         try {
             Map<String, String> deviceStatuses = CommandUtil.parse_query_local_device_statuses(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_query_local_device_statuses())).toString());
-            CommandUtil.parse_setting_source(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_position_card( deviceStatuses.get("port"),  deviceStatuses.get("port_number"), deviceStatuses.get("hardware_type"), "RejectPosition"))).toString());
+            CommandUtil.parse_setting_source(DllLoadIn.instance.callFunc(new WString(CommandUtil.format_position_card(deviceStatuses.get("port"), deviceStatuses.get("port_number"), deviceStatuses.get("hardware_type"), "RejectPosition"))).toString());
         } catch (Exception e) {
             log.error("ApiController_tuika:{}", e.getMessage(), e);
         }
