@@ -8,7 +8,8 @@ import java.util.stream.Collectors;
 
 public enum TemplateEnum {
     T4("4"),
-    T5("5")
+    T5("5"),
+    T6("6")
             ;
 
     public static final Map<String, TemplateEnum> codeMap = Arrays.stream(TemplateEnum.values()).collect(Collectors.toMap(TemplateEnum::getCode, Function.identity()));
